@@ -39,11 +39,12 @@ class Movie
     {
         // Map rating ranges to title groups
         $movieCollections = [
-            '9+' => [ ... ],
-            '8+' => [ ... ],
-            '7+' => [ ... ],
-            '6+' => [ ... ]
+            '9+' => [],
+            '8+' => [],
+            '7+' => [],
+            '6+' => []
         ];
+
 
         $titles = $movieCollections[$ratingRange] ?? $movieCollections['9+']; // Fallback to 9+ if invalid
 
@@ -162,7 +163,7 @@ class Movie
         }
 
         // Random usernames for reviews
-        $randomUsernames = [ ... ];
+        $randomUsernames = [];
 
         // Prompt to send to Gemini API
         $prompt = "Generate $count different movie reviews for '$movieTitle' ($movieYear)...";
@@ -218,15 +219,36 @@ class Movie
             $reviews = array_slice($reviews, 0, $count);
         }
 
+        // Define a fallback list of random usernames
+        $randomUsernames = [
+            'FilmFan123',
+            'MovieBuff',
+            'CineLover',
+            'ScreenCritic',
+            'ReelReviewer',
+            'PopcornPro',
+            'CinemaGuru',
+            'MovieManiac',
+            'FlickFanatic',
+            'CritiqueKing'
+        ];
+
+        // Ensure it's not empty; fallback to default if needed
+        if (empty($randomUsernames)) {
+            $randomUsernames = ['AnonymousUser'];
+        }
+
         // Attach random usernames and ratings
         $finalReviews = [];
+
         foreach ($reviews as $index => $review) {
             $finalReviews[] = [
                 'username' => $randomUsernames[array_rand($randomUsernames)],
-                'review' => $review['review'] ?? $review,
-                'rating' => rand(1, 5) // Random rating from 3 to 5
+                'review'   => $review['review'] ?? $review,  // support plain or key-based format
+                'rating'   => rand(3, 5) // Random rating from 3 to 5
             ];
         }
+
 
         return $finalReviews;
     }
@@ -234,7 +256,7 @@ class Movie
     // Fallback reviews if Gemini API fails
     private function getFallbackReviews($usernames, $count = 3)
     {
-        $fallbackReviews = [ ... ];
+        $fallbackReviews = [];
 
         $finalReviews = [];
         $selectedReviews = array_rand($fallbackReviews, min($count, count($fallbackReviews)));
