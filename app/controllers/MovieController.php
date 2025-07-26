@@ -69,34 +69,19 @@ class MovieController extends Controller
             $title = $_POST['title'] ?? '';
             $year = $_POST['year'] ?? '';
             $rating = $_POST['rating'] ?? 0;
-            
-            // Debug logging
-            error_log("Rating request - Title: $title, Year: $year, Rating: $rating");
-            
-            $userSession = session_id();
-            error_log("Session ID: $userSession");
 
-            if ($title && $year && $rating >= 1 && $rating <= 5 && !empty($userSession)) {
+            if ($title && $year && $rating >= 1 && $rating <= 5) {
                 $movieModel = new Movie();
+                $userSession = session_id();
+
                 $success = $movieModel->saveRating($title, $year, $userSession, $rating);
-                
-                error_log("Save rating result: " . ($success ? 'true' : 'false'));
 
                 header('Content-Type: application/json');
                 echo json_encode(['success' => $success]);
             } else {
-                $error = 'Invalid data';
-                if (empty($userSession)) {
-                    $error = 'Session not started';
-                }
-                
-                error_log("Rating failed: $error");
                 header('Content-Type: application/json');
-                echo json_encode(['success' => false, 'error' => $error]);
+                echo json_encode(['success' => false, 'error' => 'Invalid data']);
             }
-        } else {
-            header('Content-Type: application/json');
-            echo json_encode(['success' => false, 'error' => 'Invalid request method']);
         }
     }
 }
