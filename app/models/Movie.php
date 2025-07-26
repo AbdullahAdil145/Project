@@ -3,10 +3,13 @@
 class Movie
 {
     private $apiKey;
+    private $db;
 
     public function __construct()
     {
         $this->apiKey = getenv("omdb_api");
+        global $db;
+        $this->db = $db;
     }
 
     public function getMovieByTitle($title)
@@ -104,10 +107,13 @@ class Movie
 
     public function saveRating($movieTitle, $movieYear, $userSession, $rating)
     {
-        global $db;
+        if (!$this->db) {
+            error_log("Database connection not available");
+            return false;
+        }
 
         try {
-            $stmt = $db->prepare("
+            $stmt = $this->db->prepare("
                 INSERT INTO movie_ratings (movie_title, movie_year, user_session, rating) 
                 VALUES (?, ?, ?, ?) 
                 ON DUPLICATE KEY UPDATE rating = ?, updated_at = CURRENT_TIMESTAMP
@@ -122,10 +128,13 @@ class Movie
 
     public function getRating($movieTitle, $movieYear, $userSession)
     {
-        global $db;
+        if (!$this->db) {
+            error_log("Database connection not available");
+            return null;
+        }
 
         try {
-            $stmt = $db->prepare("
+            $stmt = $this->db->prepare("
                 SELECT rating FROM movie_ratings 
                 WHERE movie_title = ? AND movie_year = ? AND user_session = ?
             ");
@@ -140,10 +149,13 @@ class Movie
 
     public function getAverageRating($movieTitle, $movieYear)
     {
-        global $db;
+        if (!$this->db) {
+            error_log("Database connection not available");
+            return ['average' => null, 'count' => 0];
+        }
 
         try {
-            $stmt = $db->prepare("
+            $stmt = $this->db->prepare("
                 SELECT AVG(rating) as avg_rating, COUNT(*) as total_ratings 
                 FROM movie_ratings 
                 WHERE movie_title = ? AND movie_year = ?
