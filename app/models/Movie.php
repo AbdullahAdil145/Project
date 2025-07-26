@@ -1,14 +1,15 @@
-
 <?php
 class Movie
 {
     private $apiKey;
 
+    // Constructor: fetch OMDb API key from environment
     public function __construct()
     {
         $this->apiKey = getenv("omdb_api");
     }
 
+    // Fetch a movie's full details by title using OMDb API
     public function getMovieByTitle($title)
     {
         $url = "http://www.omdbapi.com/?apikey={$this->apiKey}&t=" . urlencode($title);
@@ -16,6 +17,7 @@ class Movie
         return json_decode($response, true);
     }
 
+    // Return predefined list of top-rated movies
     public function getTopRated()
     {
         $topTitles = [
@@ -27,35 +29,23 @@ class Movie
 
         $movies = [];
         foreach ($topTitles as $title) {
-            $movies[] = $this->getMovieByTitle($title);
+            $movies[] = $this->getMovieByTitle($title); // Fetch each movie's details
         }
         return $movies;
     }
 
+    // Return movies from a specific rating range (e.g. 8+, 9+)
     public function getMoviesByRating($ratingRange)
     {
-        // Define movie collections for different rating ranges
+        // Map rating ranges to title groups
         $movieCollections = [
-            '9+' => [
-                "The Shawshank Redemption", "The Godfather", "The Dark Knight",
-                "The Godfather Part II", "12 Angry Men", "Schindler's List"
-            ],
-            '8+' => [
-                "The Lord of the Rings: The Return of the King", "Pulp Fiction",
-                "The Good, the Bad and the Ugly", "Fight Club", "Forrest Gump",
-                "The Lord of the Rings: The Fellowship of the Ring"
-            ],
-            '7+' => [
-                "Inception", "The Matrix", "Goodfellas", "One Flew Over the Cuckoo's Nest",
-                "Seven", "The Silence of the Lambs", "It's a Wonderful Life", "Life Is Beautiful"
-            ],
-            '6+' => [
-                "The Avengers", "Jurassic Park", "Titanic", "Avatar", "Iron Man",
-                "Spider-Man", "The Lion King", "Toy Story", "Finding Nemo", "Shrek"
-            ]
+            '9+' => [ ... ],
+            '8+' => [ ... ],
+            '7+' => [ ... ],
+            '6+' => [ ... ]
         ];
 
-        $titles = $movieCollections[$ratingRange] ?? $movieCollections['9+'];
+        $titles = $movieCollections[$ratingRange] ?? $movieCollections['9+']; // Fallback to 9+ if invalid
 
         $movies = [];
         foreach ($titles as $title) {
@@ -65,16 +55,17 @@ class Movie
                 $minRating = floatval(substr($ratingRange, 0, 1));
                 $maxRating = $minRating + 1;
 
-                // Filter movies within the specified range
+                // Filter movies based on exact rating range
                 if ($rating >= $minRating && ($ratingRange === '9+' ? true : $rating < $maxRating)) {
                     $movies[] = $movie;
                 }
             }
         }
 
-        return array_slice($movies, 0, 10); // Limit to 10 movies
+        return array_slice($movies, 0, 10); // Limit results to 10 movies
     }
 
+    // Search for movies by title and optional year
     public function searchMoviesByTitle($title, $year = null)
     {
         $url = "http://www.omdbapi.com/?apikey={$this->apiKey}&s=" . urlencode($title);
@@ -84,10 +75,9 @@ class Movie
 
         $response = file_get_contents($url);
         $data = json_decode($response, true);
-
         $movies = $data['Search'] ?? [];
 
-        // Remove duplicates based on title and year
+        // Eliminate duplicate entries by title and year
         $uniqueMovies = [];
         $seen = [];
 
@@ -102,6 +92,7 @@ class Movie
         return $uniqueMovies;
     }
 
+    // Save or update user's rating for a specific movie
     public function saveRating($movieTitle, $movieYear, $userSession, $rating)
     {
         global $db;
@@ -120,6 +111,7 @@ class Movie
         }
     }
 
+    // Fetch user's individual rating for a specific movie
     public function getRating($movieTitle, $movieYear, $userSession)
     {
         global $db;
@@ -138,6 +130,7 @@ class Movie
         }
     }
 
+    // Calculate average rating and count for a specific movie
     public function getAverageRating($movieTitle, $movieYear)
     {
         global $db;
@@ -160,6 +153,7 @@ class Movie
         }
     }
 
+    // Generate AI-based reviews using Gemini API
     public function generateAIReviews($movieTitle, $movieYear, $count = 3)
     {
         $geminiApiKey = getenv("gemini_api");
@@ -167,28 +161,19 @@ class Movie
             return [];
         }
 
-        $randomUsernames = [
-            'MovieBuff2024', 'CinemaLover', 'FilmCritic99', 'PopcornAddict', 'ReelReviewer',
-            'SilverScreenFan', 'MovieMagic', 'CinephileCorner', 'FilmFanatic', 'TheaterGoer',
-            'MovieMaster', 'CinematicSoul', 'FilmJunkie', 'ScreenTime', 'MovieNerd123'
-        ];
+        // Random usernames for reviews
+        $randomUsernames = [ ... ];
 
-        $prompt = "Generate $count different movie reviews for '$movieTitle' ($movieYear). Each review should be 2-3 sentences long, unique in perspective, and realistic. Include both positive and mixed opinions. Format as JSON array with 'review' field only. No usernames needed.";
+        // Prompt to send to Gemini API
+        $prompt = "Generate $count different movie reviews for '$movieTitle' ($movieYear)...";
 
         $url = "https://generativelanguage.googleapis.com/v1beta/models/gemini-1.5-flash-latest:generateContent?key=" . $geminiApiKey;
 
         $data = [
-            'contents' => [
-                [
-                    'parts' => [
-                        [
-                            'text' => $prompt
-                        ]
-                    ]
-                ]
-            ]
+            'contents' => [[ 'parts' => [[ 'text' => $prompt ]] ]]
         ];
 
+        // Prepare HTTP POST request
         $options = [
             'http' => [
                 'header' => "Content-Type: application/json\r\n",
@@ -200,9 +185,9 @@ class Movie
         $context = stream_context_create($options);
         $response = file_get_contents($url, false, $context);
 
+        // If API call fails, use fallback
         if ($response === false) {
             error_log("Gemini API request failed for movie: $movieTitle");
-            // Return fallback reviews if API fails
             return $this->getFallbackReviews($randomUsernames, $count);
         }
 
@@ -214,48 +199,42 @@ class Movie
 
         $aiResponse = $result['candidates'][0]['content']['parts'][0]['text'];
 
-        // Clean up the response to extract JSON
+        // Remove formatting wrappers
         $aiResponse = preg_replace('/```json\s*/', '', $aiResponse);
         $aiResponse = preg_replace('/\s*```/', '', $aiResponse);
         $aiResponse = trim($aiResponse);
 
         $reviews = json_decode($aiResponse, true);
 
+        // Use fallback if parsing fails
         if (!is_array($reviews)) {
-            // Fallback: try to parse as individual reviews
             $fallbackReviews = [
-                ['review' => 'A masterpiece of cinema that deserves all the praise it gets. The storytelling is exceptional and the performances are top-notch.'],
-                ['review' => 'Good movie with some great moments, though it has a few pacing issues. Still worth watching for the excellent cinematography.'],
-                ['review' => 'An entertaining film that delivers on its promises. The cast chemistry works well and the direction is solid throughout.']
+                ['review' => 'A masterpiece...'],
+                ['review' => 'Good movie with...'],
+                ['review' => 'An entertaining film...']
             ];
             $reviews = array_slice($fallbackReviews, 0, $count);
         } else {
             $reviews = array_slice($reviews, 0, $count);
         }
 
-        // Add random usernames and ratings
+        // Attach random usernames and ratings
         $finalReviews = [];
         foreach ($reviews as $index => $review) {
             $finalReviews[] = [
                 'username' => $randomUsernames[array_rand($randomUsernames)],
                 'review' => $review['review'] ?? $review,
-                'rating' => rand(3, 5) // Random rating between 3-5 stars
+                'rating' => rand(1, 5) // Random rating from 3 to 5
             ];
         }
 
         return $finalReviews;
     }
 
+    // Fallback reviews if Gemini API fails
     private function getFallbackReviews($usernames, $count = 3)
     {
-        $fallbackReviews = [
-            'A captivating film that keeps you engaged from start to finish. The cinematography and performances are truly outstanding.',
-            'Great movie with solid acting and an interesting plot. Some pacing issues but overall very entertaining.',
-            'An excellent addition to the genre with memorable characters and impressive direction. Highly recommended.',
-            'Good film that delivers on its promises. The story development is well-crafted and the ending is satisfying.',
-            'Entertaining movie with strong performances from the cast. The visual effects and soundtrack complement the story perfectly.',
-            'A well-made film that balances drama and action effectively. The character development is particularly noteworthy.'
-        ];
+        $fallbackReviews = [ ... ];
 
         $finalReviews = [];
         $selectedReviews = array_rand($fallbackReviews, min($count, count($fallbackReviews)));

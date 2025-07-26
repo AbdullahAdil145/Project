@@ -2,22 +2,30 @@
 <html>
 <head>
     <title>Search a Movie - Cinemax</title>
+
+    <!-- Link to external stylesheet -->
     <link rel="stylesheet" href="style.css">
 </head>
 <body>
     <!-- Navbar -->
     <div class="navbar">
+        <!-- Brand/logo -->
         <div class="brand">
             <img src="https://img.icons8.com/ios-filled/50/ffffff/video.png" alt="logo"/> Cinemax
         </div>
+
+        <!-- Dark mode toggle -->
         <div class="nav-actions">
             <button id="darkModeToggle" class="nav-btn">🌙</button>
         </div>
     </div>
 
-    <!-- Search Section -->
+    <!-- Main content area -->
     <div class="content">
+        <!-- Page title -->
         <h2 class="page-title">🎬 Search a Movie</h2>
+
+        <!-- Search form -->
         <form action="index.php" method="get" class="search-form">
             <input type="hidden" name="action" value="search">
             <input type="text" name="title" placeholder="Enter movie title..." required>
@@ -25,7 +33,7 @@
             <button type="submit">Search</button>
         </form>
 
-        <!-- Rating Filter for Homepage -->
+        <!-- IMDb rating filter -->
         <div class="rating-filter">
             <h3>Filter by IMDb Rating</h3>
             <form action="index.php" method="get" class="rating-form">
@@ -39,37 +47,48 @@
             </form>
         </div>
 
+        <!-- Section title based on selected rating -->
         <h2 class="section-title">
             🔥 <?php if (isset($selectedRating) && $selectedRating): ?>
+                <!-- Display selected rating label -->
                 Movies with <?= htmlspecialchars($selectedRating) ?> Rating
             <?php else: ?>
+                <!-- Default label -->
                 Top Rated
             <?php endif; ?>
         </h2>
 
+        <!-- Grid of top or filtered movies -->
         <div class="movie-grid">
             <?php foreach ($topMovies as $movie): ?>
                 <div class="movie-card">
+                    <!-- Movie detail link -->
                     <a href="index.php?action=details&title=<?= urlencode($movie['Title']) ?>&year=<?= urlencode($movie['Year']) ?>" class="movie-card-btn">
+                        <!-- Poster image -->
                         <img src="<?= $movie['Poster'] ?>" alt="Poster">
+                        <!-- Movie title -->
                         <div class="movie-title"><?= $movie['Title'] ?></div>
                     </a>
                 </div>
             <?php endforeach; ?>
         </div>
     </div>
-<script>
+
+    <!-- Dark mode toggle script -->
+    <script>
         document.addEventListener('DOMContentLoaded', function() {
+            // Get DOM elements
             const darkModeToggle = document.getElementById('darkModeToggle');
             const body = document.body;
 
-            // Load saved theme
+            // Load saved theme from localStorage
             const savedTheme = localStorage.getItem('theme');
             if (savedTheme === 'dark') {
                 body.classList.add('dark');
                 darkModeToggle.textContent = '☀️';
             }
 
+            // Handle toggle button click
             darkModeToggle.addEventListener('click', function() {
                 body.classList.toggle('dark');
 
