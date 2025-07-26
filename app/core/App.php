@@ -1,27 +1,30 @@
 <?php
 
-require_once __DIR__ . '/config.php'; // Load configuration file
-require_once __DIR__ . '/../controllers/MovieController.php'; // Load MovieController
+require_once __DIR__ . '/config.php';
+require_once __DIR__ . '/../controllers/MovieController.php';
 
 class App
 {
-    protected $controller = null; // Placeholder for the controller instance
-    protected $method = 'index'; // Default method to call
-    protected $params = []; // Parameters to pass to the method
+    protected $controller = null;
+    protected $method = 'index';
+    protected $params = [];
 
     public function __construct()
     {
-        $action = $_GET['action'] ?? 'index'; // Get 'action' from URL, default to 'index'
+        $action = $_GET['action'] ?? 'index';
 
-        $this->controller = new MovieController(); // Instantiate the MovieController
+        // Instantiate controller after requiring the file
+        $this->controller = new MovieController();
 
+        // Check if the method exists
         if (method_exists($this->controller, $action)) {
-            $this->method = $action; // Set method if it exists in the controller
+            $this->method = $action;
         } else {
-            echo "404 Not Found: method '{$action}' does not exist."; // Show error if method not found
+            echo "404 Not Found: method '{$action}' does not exist.";
             return;
         }
 
-        call_user_func_array([$this->controller, $this->method], $this->params); // Call the method with parameters
+        // Call the method
+        call_user_func_array([$this->controller, $this->method], $this->params);
     }
 }

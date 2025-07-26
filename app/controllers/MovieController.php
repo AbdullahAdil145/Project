@@ -1,55 +1,57 @@
+
 <?php
-require_once 'app/core/Controller.php'; // Include base controller
-require_once 'app/models/Movie.php'; // Include the Movie model
+require_once 'app/core/Controller.php';
+require_once 'app/models/Movie.php';
 
 class MovieController extends Controller
 {
-    // Handles displaying top movies optionally filtered by rating
     public function index()
     {
-        $movieModel = new Movie(); // Create an instance of the Movie model
-        $rating = $_GET['rating'] ?? null; // Get rating filter from URL if provided
+        $movieModel = new Movie();
+        $rating = $_GET['rating'] ?? null;
 
         if ($rating) {
-            $topMovies = $movieModel->getMoviesByRating($rating); // Get movies filtered by rating
+            $topMovies = $movieModel->getMoviesByRating($rating);
         } else {
-            $topMovies = $movieModel->getTopRated(); // Get top-rated movies if no filter
+            $topMovies = $movieModel->getTopRated();
         }
 
-        $this->view('search', ['topMovies' => $topMovies, 'selectedRating' => $rating]); // Render search view
+        $this->view('search', ['topMovies' => $topMovies, 'selectedRating' => $rating]);
     }
 
-    // Handles searching movies by title and optional year
     public function search()
     {
-        $title = $_GET['title'] ?? ''; // Get title from URL
-        $year = $_GET['year'] ?? null; // Get year from URL if provided
+        $title = $_GET['title'] ?? '';
+        $year = $_GET['year'] ?? null;
 
         if ($title) {
-            $movieModel = new Movie(); // Create an instance of the Movie model
-            $movies = $movieModel->searchMoviesByTitle($title, $year); // Search movies by title and year
-            $this->view('result', ['movies' => $movies, 'query' => $title, 'year' => $year]); // Render result view
+            $movieModel = new Movie();
+            $movies = $movieModel->searchMoviesByTitle($title, $year);
+            $this->view('result', ['movies' => $movies, 'query' => $title, 'year' => $year]);
         } else {
-            header("Location: index.php"); // Redirect if no title provided
+            header("Location: index.php");
         }
     }
 
-    // Displays detailed information and AI reviews for a specific movie
     public function details()
     {
-        $title = $_GET['title'] ?? ''; // Get movie title from URL
-        $year = $_GET['year'] ?? null; // Get movie year from URL if provided
+        $title = $_GET['title'] ?? '';
+        $year = $_GET['year'] ?? null;
 
         if ($title) {
-            $movieModel = new Movie(); // Create an instance of the Movie model
-            $movie = $movieModel->getMovieByTitle($title); // Fetch movie details
-            $aiReviews = $movieModel->generateAIReviews($title, $movie['Year'] ?? $year); // Generate AI reviews
+            $movieModel = new Movie();
+            $movie = $movieModel->getMovieByTitle($title);
+            $aiReviews = $movieModel->generateAIReviews($title, $movie['Year'] ?? $year);
 
-            $userSession = session_id(); // Get current user session ID
-            $userRating = $movieModel->getRating($title, $movie['Year'] ?? $year, $userSession); // Get user's rating
-            $avgRating = $movieModel->getAverageRating($title, $movie['Year'] ?? $year); // Get average rating and count
+            // Get user session ID
+            $userSession = session_id();
 
-            // Render details view with all data
+            // Get user's existing rating
+            $userRating = $movieModel->getRating($title, $movie['Year'] ?? $year, $userSession);
+
+            // Get average rating and count
+            $avgRating = $movieModel->getAverageRating($title, $movie['Year'] ?? $year);
+
             $this->view('details', [
                 'movie' => $movie, 
                 'aiReviews' => $aiReviews,
@@ -57,29 +59,28 @@ class MovieController extends Controller
                 'avgRating' => $avgRating
             ]);
         } else {
-            header("Location: index.php"); // Redirect if no title is provided
+            header("Location: index.php");
         }
     }
 
-    // Handles saving a user's movie rating via POST
     public function rate()
     {
         if ($_SERVER['REQUEST_METHOD'] === 'POST') {
-            $title = $_POST['title'] ?? ''; // Get movie title from POST
-            $year = $_POST['year'] ?? ''; // Get movie year from POST
-            $rating = $_POST['rating'] ?? 0; // Get rating value from POST
+            $title = $_POST['title'] ?? '';
+            $year = $_POST['year'] ?? '';
+            $rating = $_POST['rating'] ?? 0;
 
             if ($title && $year && $rating >= 1 && $rating <= 5) {
-                $movieModel = new Movie(); // Create an instance of the Movie model
-                $userSession = session_id(); // Get current user session ID
+                $movieModel = new Movie();
+                $userSession = session_id();
 
-                $success = $movieModel->saveRating($title, $year, $userSession, $rating); // Save the rating
+                $success = $movieModel->saveRating($title, $year, $userSession, $rating);
 
-                header('Content-Type: application/json'); // Set JSON response header
-                echo json_encode(['success' => $success]); // Return JSON success response
+                header('Content-Type: application/json');
+                echo json_encode(['success' => $success]);
             } else {
-                header('Content-Type: application/json'); // Set JSON response header
-                echo json_encode(['success' => false, 'error' => 'Invalid data']); // Return error response
+                header('Content-Type: application/json');
+                echo json_encode(['success' => false, 'error' => 'Invalid data']);
             }
         }
     }
